@@ -1,3 +1,6 @@
+Created 0 todos
+
+```markdown
 # AI-Powered Medical Imaging and Clinical Reporting System
 
 An end-to-end deep learning system for automated chest X-ray analysis, pneumonia classification, Grad-CAM explainability visualization, API-driven inference, and structured clinical reporting using PyTorch, FastAPI, Streamlit, and computer vision workflows.
@@ -88,6 +91,7 @@ ai-medical-imaging-system/
 │   └── logs/
 │
 ├── scripts/
+│   ├── setup_dataset.py
 │   └── test_gradcam.py
 │
 ├── src/
@@ -97,6 +101,7 @@ ai-medical-imaging-system/
 │   ├── explainability/
 │   └── reporting/
 │
+├── main.py
 ├── requirements.txt
 ├── README.md
 └── .gitignore
@@ -146,33 +151,27 @@ data/
 └── chest_xray/
     ├── train/
     │   ├── NORMAL/
-    │   │   ├── IM-0001-0001.jpeg
-    │   │   └── ... (5,216 images)
     │   └── PNEUMONIA/
-    │       ├── person1_virus_1.jpeg
-    │       └── ... (3,875 images)
     ├── val/
     │   ├── NORMAL/
-    │   │   └── ... (~500 images)
     │   └── PNEUMONIA/
-    │       └── ... (~500 images)
     └── test/
         ├── NORMAL/
-        │   └── ... (~630 images)
         └── PNEUMONIA/
-            └── ... (~390 images)
 ```
 
 ## Dataset Statistics
 
+**Current Kaggle split (actual):**
+
 | Split | NORMAL | PNEUMONIA | Total |
 |-------|--------|-----------|-------|
-| Train | 3,883  | 2,705     | 5,216 |
-| Val   | 512    | 614       | 1,126 |
-| Test  | 390    | 234       | 624   |
-| **Total** | **4,785** | **3,553** | **8,966** |
+| Train | 1,341  | 3,875     | 5,216 |
+| Val   | 8      | 8         | 16    |
+| Test  | 234    | 390       | 624   |
+| **Total** | **1,583** | **4,273** | **5,856** |
 
-> **Note**: Default split is approximately 80% train / 10% val / 10% test
+> **Important:** Validation has only 16 images, so validation accuracy is unstable (1 image = 6.25%).
 
 ---
 
@@ -198,6 +197,26 @@ Explainability Generation
 API-Based Serving
         ↓
 Frontend Visualization
+```
+
+---
+
+# Quick Start: Complete Pipeline
+
+Run the entire workflow in one command:
+
+```bash
+# Full pipeline: dataset → train → evaluate → report
+python main.py
+
+# Skip dataset setup (use existing data)
+python main.py --skip-dataset
+
+# Skip training (use existing model)
+python main.py --skip-train
+
+# Evaluate only (no training)
+python main.py --evaluate-only
 ```
 
 ---
@@ -228,8 +247,6 @@ The project includes a comprehensive evaluation pipeline that assesses model per
 
 ## Evaluation Metrics
 
-The evaluation module computes:
-
 | Metric | Purpose |
 |--------|---------|
 | **Overall Accuracy** | Percentage of correct predictions |
@@ -237,14 +254,12 @@ The evaluation module computes:
 | **Precision** | True positives / (True positives + False positives) |
 | **Recall** | True positives / (True positives + False negatives) |
 | **F1-Score** | Harmonic mean of precision and recall |
-| **Sensitivity (TPR)** | True positive rate - important for catching pneumonia cases |
-| **Specificity (TNR)** | True negative rate - important for confirming normal cases |
+| **Sensitivity (TPR)** | True positive rate (catching pneumonia cases) |
+| **Specificity (TNR)** | True negative rate (correctly identifying normal cases) |
 | **Confusion Matrix** | Visual breakdown of predictions vs actual labels |
 | **ROC Curve** | Visual representation of model discrimination ability |
 
 ## Run Evaluation
-
-After training, evaluate the model on the test set:
 
 ```bash
 python src/training/evaluate.py
@@ -252,38 +267,12 @@ python src/training/evaluate.py
 
 ### Output Artifacts
 
-The evaluation pipeline generates:
-
 | Artifact | Location | Description |
 |----------|----------|-------------|
 | Test metrics | `outputs/metrics/test_metrics.json` | Overall and per-class metrics |
 | Classification report | `outputs/metrics/classification_report.json` | Detailed sklearn report |
 | Confusion matrix plot | `outputs/visualizations/confusion_matrix.png` | Heatmap of predictions |
 | ROC curve plot | `outputs/visualizations/roc_curve.png` | Model discrimination curve |
-
-### Example Output
-
-```
-======================================================================
-TEST SET EVALUATION RESULTS
-======================================================================
-
-Overall Metrics:
-  Accuracy   : 0.9200
-  ROC-AUC    : 0.9650
-  Macro F1   : 0.9180
-  Weighted F1: 0.9195
-
-Clinical Metrics (important for medical diagnosis):
-  Sensitivity (TPR) : 0.9500  (catches PNEUMONIA cases)
-  Specificity (TNR) : 0.9100  (correctly identifies NORMAL)
-
-Confusion Matrix:
-  True Positives  : 185 (correctly predicted PNEUMONIA)
-  True Negatives  : 234 (correctly predicted NORMAL)
-  False Positives : 23 (incorrectly predicted PNEUMONIA)
-  False Negatives : 11 (missed PNEUMONIA cases)
-```
 
 ---
 
@@ -297,8 +286,6 @@ Grad-CAM visualizations help identify:
 - High-attention abnormal areas
 - Model reasoning patterns
 
-This improves transparency for healthcare AI workflows.
-
 ---
 
 # FastAPI Backend
@@ -310,13 +297,6 @@ The backend exposes REST API endpoints for:
 | `/` | API status |
 | `/health` | Health check |
 | `/predict` | Pneumonia prediction inference |
-
-The backend supports:
-
-- Image upload handling
-- Real-time inference
-- JSON prediction responses
-- Confidence estimation
 
 ---
 
@@ -346,6 +326,12 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
+### Activate Environment (Linux/Mac)
+
+```bash
+source .venv/bin/activate
+```
+
 ---
 
 ## 2. Install Dependencies
@@ -358,86 +344,56 @@ pip install -r requirements.txt
 
 ## 3. Setup Dataset
 
-Before training or inference, set up the dataset:
-
 ```bash
-# Verify/download dataset
 python scripts/setup_dataset.py --verify
-
-# Or use Kaggle API if configured
+# or
 python scripts/setup_dataset.py --kaggle-api
 ```
 
-This creates `data/chest_xray/` with train/val/test splits. See [Dataset Setup](#dataset-setup) section above.
+---
+
+## 4. Run Complete Pipeline (Recommended)
+
+```bash
+python main.py
+```
 
 ---
 
-## 4. Train Model
-
-To train the model from scratch:
+## 5. Train Model (Manual)
 
 ```bash
 python src/training/train.py
 ```
 
-This will:
-- Build ResNet18 model with transfer learning
-- Apply weighted loss for class imbalance
-- Train for 10 epochs with learning rate scheduling
-- Save best model to `models/best_model.pth`
-- Save training history to `outputs/metrics/training_history.json`
-
 ---
 
-## 5. Evaluate Model
-
-After training, evaluate on the test set to get comprehensive metrics:
+## 6. Evaluate Model (Manual)
 
 ```bash
 python src/training/evaluate.py
 ```
 
-This generates:
-- Test metrics (accuracy, ROC-AUC, precision, recall, F1)
-- Confusion matrix visualization
-- ROC curve plot
-- Classification report
-
-See [Model Evaluation](#model-evaluation) section above.
-
 ---
 
-## 6. Run FastAPI Backend
+## 7. Run FastAPI Backend
 
 ```bash
 uvicorn api.main:app --reload
 ```
 
-Backend available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-Swagger documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
+- API: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
 
 ---
 
-## 7. Run Streamlit Frontend
+## 8. Run Streamlit Frontend
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-Frontend available at:
-
-```text
-http://localhost:8501
-```
+- Frontend: `http://localhost:8501`
 
 ---
 
@@ -447,6 +403,8 @@ http://localhost:8501
 |---|---|
 | Trained model | `models/best_model.pth` |
 | Training history | `outputs/metrics/training_history.json` |
+| Test metrics | `outputs/metrics/test_metrics.json` |
+| Classification report | `outputs/metrics/classification_report.json` |
 | Grad-CAM outputs | `outputs/visualizations/` |
 | Prediction artifacts | `outputs/predictions/` |
 | Logs | `outputs/logs/` |
@@ -463,7 +421,6 @@ http://localhost:8501
 - Explainable healthcare AI with Grad-CAM
 - Frontend-backend separation (Streamlit + FastAPI)
 - Structured output artifacts (metrics, visualizations, logs)
-- Pinned dependencies for reproducibility
 
 ---
 
@@ -472,31 +429,24 @@ http://localhost:8501
 ## Environment Setup
 
 ```bash
-# Create virtual environment
 python -m venv .venv
-
-# Activate (Windows)
 .venv\Scripts\activate
-
-# Install pinned dependencies
 pip install -r requirements.txt
 ```
 
 ## Reproducibility Features
 
-- **Pinned versions** in `requirements.txt` for library consistency
-- **Fixed random seed** (SEED=42) across PyTorch, NumPy, and Python
-- **Automated dataset setup** with verification script
-- **Centralized config** (`configs/config.py`) for hyperparameters and paths
-- **Model metadata** tracking training date, metrics, and configuration
-- **Complete evaluation pipeline** with test metrics and visualizations
+- Pinned versions in `requirements.txt`
+- Fixed random seed (`SEED=42`) across PyTorch/NumPy/Python
+- Automated dataset setup and verification script
+- Centralized config in `configs/config.py`
+- Formal evaluation pipeline with test artifacts
 
 ---
 
-# Current Engineering Highlights
-
 # Future Improvements
 
+- Validation split cleanup (current val=16 issue)
 - DICOM image support
 - Docker container deployment
 - Multi-class thoracic disease detection
@@ -512,3 +462,4 @@ pip install -r requirements.txt
 This project is developed for educational and research purposes only.
 
 Predictions are not intended for clinical diagnosis or medical decision-making.
+```
