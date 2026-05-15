@@ -8,6 +8,6 @@ image = Image.open(
 
 heatmap = generate_gradcam(image)
 
-heatmap.save("outputs/gradcam_result.png")
+heatmap.save("outputs/visualizations/gradcam_result.png")
 
 print("Grad-CAM saved successfully.")

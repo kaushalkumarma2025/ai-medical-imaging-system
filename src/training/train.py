@@ -39,13 +39,37 @@ DEVICE = torch.device(
 )
 
 # ======================================
-# OUTPUT PATHS
+# OUTPUT DIRECTORIES
+# ======================================
+
+METRICS_DIR = os.path.join(
+    OUTPUT_DIR,
+    "metrics"
+)
+
+VISUALIZATION_DIR = os.path.join(
+    OUTPUT_DIR,
+    "visualizations"
+)
+
+PREDICTIONS_DIR = os.path.join(
+    OUTPUT_DIR,
+    "predictions"
+)
+
+LOGS_DIR = os.path.join(
+    OUTPUT_DIR,
+    "logs"
+)
+
+# ======================================
+# OUTPUT FILE PATHS
 # ======================================
 
 MODEL_SAVE_PATH = MODEL_PATH
 
 HISTORY_SAVE_PATH = os.path.join(
-    OUTPUT_DIR,
+    METRICS_DIR,
     "training_history.json"
 )
 
@@ -216,6 +240,26 @@ def train():
 
     os.makedirs(
         OUTPUT_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        METRICS_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        VISUALIZATION_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        PREDICTIONS_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        LOGS_DIR,
         exist_ok=True
     )
 
