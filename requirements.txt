@@ -1,0 +1,11 @@
+torch
+torchvision
+numpy
+pandas
+opencv-python
+matplotlib
+scikit-learn
+fastapi
+uvicorn
+streamlit
+pillow
