@@ -222,6 +222,71 @@ Training outputs include:
 
 ---
 
+# Model Evaluation
+
+The project includes a comprehensive evaluation pipeline that assesses model performance on the test set.
+
+## Evaluation Metrics
+
+The evaluation module computes:
+
+| Metric | Purpose |
+|--------|---------|
+| **Overall Accuracy** | Percentage of correct predictions |
+| **ROC-AUC** | Receiver Operating Characteristic - Area Under Curve |
+| **Precision** | True positives / (True positives + False positives) |
+| **Recall** | True positives / (True positives + False negatives) |
+| **F1-Score** | Harmonic mean of precision and recall |
+| **Sensitivity (TPR)** | True positive rate - important for catching pneumonia cases |
+| **Specificity (TNR)** | True negative rate - important for confirming normal cases |
+| **Confusion Matrix** | Visual breakdown of predictions vs actual labels |
+| **ROC Curve** | Visual representation of model discrimination ability |
+
+## Run Evaluation
+
+After training, evaluate the model on the test set:
+
+```bash
+python src/training/evaluate.py
+```
+
+### Output Artifacts
+
+The evaluation pipeline generates:
+
+| Artifact | Location | Description |
+|----------|----------|-------------|
+| Test metrics | `outputs/metrics/test_metrics.json` | Overall and per-class metrics |
+| Classification report | `outputs/metrics/classification_report.json` | Detailed sklearn report |
+| Confusion matrix plot | `outputs/visualizations/confusion_matrix.png` | Heatmap of predictions |
+| ROC curve plot | `outputs/visualizations/roc_curve.png` | Model discrimination curve |
+
+### Example Output
+
+```
+======================================================================
+TEST SET EVALUATION RESULTS
+======================================================================
+
+Overall Metrics:
+  Accuracy   : 0.9200
+  ROC-AUC    : 0.9650
+  Macro F1   : 0.9180
+  Weighted F1: 0.9195
+
+Clinical Metrics (important for medical diagnosis):
+  Sensitivity (TPR) : 0.9500  (catches PNEUMONIA cases)
+  Specificity (TNR) : 0.9100  (correctly identifies NORMAL)
+
+Confusion Matrix:
+  True Positives  : 185 (correctly predicted PNEUMONIA)
+  True Negatives  : 234 (correctly predicted NORMAL)
+  False Positives : 23 (incorrectly predicted PNEUMONIA)
+  False Negatives : 11 (missed PNEUMONIA cases)
+```
+
+---
+
 # Grad-CAM Explainability
 
 The project implements Grad-CAM explainability for medical interpretability.
@@ -307,7 +372,42 @@ This creates `data/chest_xray/` with train/val/test splits. See [Dataset Setup](
 
 ---
 
-## 4. Run FastAPI Backend
+## 4. Train Model
+
+To train the model from scratch:
+
+```bash
+python src/training/train.py
+```
+
+This will:
+- Build ResNet18 model with transfer learning
+- Apply weighted loss for class imbalance
+- Train for 10 epochs with learning rate scheduling
+- Save best model to `models/best_model.pth`
+- Save training history to `outputs/metrics/training_history.json`
+
+---
+
+## 5. Evaluate Model
+
+After training, evaluate on the test set to get comprehensive metrics:
+
+```bash
+python src/training/evaluate.py
+```
+
+This generates:
+- Test metrics (accuracy, ROC-AUC, precision, recall, F1)
+- Confusion matrix visualization
+- ROC curve plot
+- Classification report
+
+See [Model Evaluation](#model-evaluation) section above.
+
+---
+
+## 6. Run FastAPI Backend
 
 ```bash
 uvicorn api.main:app --reload
@@ -327,7 +427,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## 5. Run Streamlit Frontend
+## 7. Run Streamlit Frontend
 
 ```bash
 streamlit run app/streamlit_app.py
@@ -355,15 +455,45 @@ http://localhost:8501
 
 # Current Engineering Highlights
 
-- End-to-end deployable ML architecture
-- Frontend-backend separation
-- Centralized reproducible configuration
-- Modular inference system
-- Explainable healthcare AI pipeline
-- Structured output management
-- Production-oriented project organization
+- End-to-end reproducible ML pipeline (dataset → train → evaluate)
+- Comprehensive evaluation metrics (confusion matrix, ROC-AUC, sensitivity/specificity)
+- Modular architecture with clear separation of concerns
+- Centralized configuration for reproducibility
+- Weighted loss handling for class imbalance
+- Explainable healthcare AI with Grad-CAM
+- Frontend-backend separation (Streamlit + FastAPI)
+- Structured output artifacts (metrics, visualizations, logs)
+- Pinned dependencies for reproducibility
 
 ---
+
+# Dependencies & Reproducibility
+
+## Environment Setup
+
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate (Windows)
+.venv\Scripts\activate
+
+# Install pinned dependencies
+pip install -r requirements.txt
+```
+
+## Reproducibility Features
+
+- **Pinned versions** in `requirements.txt` for library consistency
+- **Fixed random seed** (SEED=42) across PyTorch, NumPy, and Python
+- **Automated dataset setup** with verification script
+- **Centralized config** (`configs/config.py`) for hyperparameters and paths
+- **Model metadata** tracking training date, metrics, and configuration
+- **Complete evaluation pipeline** with test metrics and visualizations
+
+---
+
+# Current Engineering Highlights
 
 # Future Improvements
 
