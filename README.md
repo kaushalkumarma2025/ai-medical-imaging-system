@@ -33,7 +33,6 @@ The project focuses on reproducible machine learning pipelines, deployment-orien
 | Frontend | Streamlit |
 | Data Processing | NumPy, Pandas |
 | Explainability | Grad-CAM |
-| Deployment | Docker-ready architecture |
 | Version Control | Git, GitHub |
 
 ---
@@ -102,6 +101,78 @@ ai-medical-imaging-system/
 ├── README.md
 └── .gitignore
 ```
+
+---
+
+# Dataset Setup
+
+## Data Source
+
+This project uses the **Chest X-Ray Images (Pneumonia)** dataset from Kaggle:
+- **Source**: https://www.kaggle.com/datasets/paul-mooney/chest-xray-pneumonia
+- **License**: CC0 1.0 (Public Domain)
+- **Description**: Labeled chest X-ray images (NORMAL vs PNEUMONIA)
+
+## Quick Setup (Automated)
+
+### Option 1: Using Kaggle API (Recommended if you have API key)
+
+```bash
+# Install kaggle CLI
+pip install kaggle
+
+# Configure API credentials (download from https://www.kaggle.com/settings/account)
+# Place kaggle.json in ~/.kaggle/ (Linux/Mac) or C:\Users\<username>\.kaggle\ (Windows)
+
+# Run setup script with Kaggle API
+python scripts/setup_dataset.py --kaggle-api
+```
+
+### Option 2: Manual Setup
+
+```bash
+# Download from https://www.kaggle.com/datasets/paul-mooney/chest-xray-pneumonia
+# Extract the downloaded chest-xray-pneumonia.zip to the data/ directory:
+unzip chest-xray-pneumonia.zip -d data/
+
+# Verify dataset structure
+python scripts/setup_dataset.py --verify
+```
+
+## Expected Directory Structure
+
+```text
+data/
+└── chest_xray/
+    ├── train/
+    │   ├── NORMAL/
+    │   │   ├── IM-0001-0001.jpeg
+    │   │   └── ... (5,216 images)
+    │   └── PNEUMONIA/
+    │       ├── person1_virus_1.jpeg
+    │       └── ... (3,875 images)
+    ├── val/
+    │   ├── NORMAL/
+    │   │   └── ... (~500 images)
+    │   └── PNEUMONIA/
+    │       └── ... (~500 images)
+    └── test/
+        ├── NORMAL/
+        │   └── ... (~630 images)
+        └── PNEUMONIA/
+            └── ... (~390 images)
+```
+
+## Dataset Statistics
+
+| Split | NORMAL | PNEUMONIA | Total |
+|-------|--------|-----------|-------|
+| Train | 3,883  | 2,705     | 5,216 |
+| Val   | 512    | 614       | 1,126 |
+| Test  | 390    | 234       | 624   |
+| **Total** | **4,785** | **3,553** | **8,966** |
+
+> **Note**: Default split is approximately 80% train / 10% val / 10% test
 
 ---
 
@@ -220,7 +291,23 @@ pip install -r requirements.txt
 
 ---
 
-## 3. Run FastAPI Backend
+## 3. Setup Dataset
+
+Before training or inference, set up the dataset:
+
+```bash
+# Verify/download dataset
+python scripts/setup_dataset.py --verify
+
+# Or use Kaggle API if configured
+python scripts/setup_dataset.py --kaggle-api
+```
+
+This creates `data/chest_xray/` with train/val/test splits. See [Dataset Setup](#dataset-setup) section above.
+
+---
+
+## 4. Run FastAPI Backend
 
 ```bash
 uvicorn api.main:app --reload
@@ -240,7 +327,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## 4. Run Streamlit Frontend
+## 5. Run Streamlit Frontend
 
 ```bash
 streamlit run app/streamlit_app.py
@@ -280,13 +367,13 @@ http://localhost:8501
 
 # Future Improvements
 
-- Larger validation and test evaluation
 - DICOM image support
 - Docker container deployment
 - Multi-class thoracic disease detection
 - Model calibration improvements
 - Cloud deployment workflows
 - Advanced clinical reporting generation
+- Cross-dataset evaluation and generalization
 
 ---
 
