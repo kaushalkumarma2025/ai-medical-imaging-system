@@ -233,7 +233,15 @@ capable of:
 - clinical workflow integration
 
 ---
+## Demo Screenshots
 
+### Upload Interface
+
+![Dark themed web app page titled AI-Powered Pneumonia Detection showing a user uploading chest X ray file person1_virus_8.jpeg and previewing the chest X ray below in a browser at localhost:8501. Visible text includes AI-Powered Pneumonia Detection, Upload a chest X-ray image to detect signs of pneumonia using a deep learning model, Upload Chest X-ray, and person1_virus_8.jpeg 44.5KB. The wider environment is a desktop browser window with tabs and a taskbar visible, creating a focused clinical and technical tone.](outputs/screenshots/upload_ui.png)
+
+### Prediction Result
+
+![Dark themed prediction results page in a browser at localhost:8501 showing an uploaded chest X ray analysis outcome. Main panel text reads Uploaded Chest X-ray, Image uploaded successfully., Prediction, Diagnosis, PNEUMONIA, Confidence, 99.9%, Clinical Report, Findings: Signs consistent with pneumonia detected in the chest X-ray image., and Recommendation: Further radiological evaluation and clinical consultation recommended. The wider environment is a desktop browser window with navigation tabs and taskbar visible, and the emotional tone is serious, urgent, and clinically informative.](outputs/screenshots/prediction_ui.png)
 ## Author
 
 Kaushal Kumar  
