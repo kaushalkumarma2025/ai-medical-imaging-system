@@ -1,24 +1,6 @@
-import sys
-import os
-
-# ======================================
-# FIX IMPORT PATH
-# ======================================
-
-sys.path.append(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..")
-    )
-)
-
-# ======================================
-# IMPORTS
-# ======================================
-
 import streamlit as st
 from PIL import Image
-
-from src.inference.predict import predict_image
+import requests
 
 # ======================================
 # PAGE CONFIG
@@ -43,7 +25,7 @@ st.write(
 )
 
 # ======================================
-# FILE UPLOAD
+# FILE UPLOADER
 # ======================================
 
 uploaded_file = st.file_uploader(
@@ -52,15 +34,13 @@ uploaded_file = st.file_uploader(
 )
 
 # ======================================
-# INFERENCE
+# PREDICTION
 # ======================================
 
 if uploaded_file:
 
-    # Load image
     image = Image.open(uploaded_file)
 
-    # Display uploaded image
     st.image(
         image,
         caption="Uploaded Chest X-ray",
@@ -69,32 +49,42 @@ if uploaded_file:
 
     st.success("Image uploaded successfully.")
 
-    # Run prediction
-    result = predict_image(image)
+    # ======================================
+    # SEND IMAGE TO FASTAPI
+    # ======================================
+
+    files = {
+        "file": uploaded_file.getvalue()
+    }
+
+    response = requests.post(
+        "http://127.0.0.1:8000/predict",
+        files=files
+    )
+
+    result = response.json()
 
     # ======================================
-    # PREDICTION DISPLAY
+    # DISPLAY RESULTS
     # ======================================
 
     st.subheader("Prediction")
 
+    if result["prediction"] == "PNEUMONIA":
+
+        st.error("PNEUMONIA DETECTED")
+
+    else:
+
+        st.success("NORMAL")
+
     st.metric(
-        label="Diagnosis",
-        value=result["prediction"]
+        "Confidence",
+        f"{result['confidence']}%"
     )
-
-    # ======================================
-    # CONFIDENCE DISPLAY
-    # ======================================
-
-    st.subheader("Confidence")
 
     st.progress(
         int(result["confidence"])
-    )
-
-    st.write(
-        f"{result['confidence']}%"
     )
 
     # ======================================
