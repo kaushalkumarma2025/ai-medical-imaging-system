@@ -1,59 +1,59 @@
-Created 0 todos
+# Chest X-Ray Pneumonia Classification System
 
-```markdown
-# AI-Powered Medical Imaging and Clinical Reporting System
-
-An end-to-end deep learning system for automated chest X-ray analysis, pneumonia classification, Grad-CAM explainability visualization, API-driven inference, and structured clinical reporting using PyTorch, FastAPI, Streamlit, and computer vision workflows.
-
-The project focuses on reproducible machine learning pipelines, deployment-oriented architecture, and interpretable healthcare AI systems.
+An end-to-end deep learning pipeline for chest X-ray analysis, pneumonia classification, Grad-CAM explainability, REST API inference, and structured clinical reporting — built with PyTorch, FastAPI, and Streamlit.
 
 ---
 
-# Features
+## Features
 
-- Chest X-ray pneumonia classification
-- Transfer learning using ResNet18
-- Medical image preprocessing and augmentation
-- Weighted loss handling for class imbalance
-- Modular deep learning training pipeline
-- Real-time model inference pipeline
-- Grad-CAM explainability visualization
-- FastAPI backend inference API
-- Streamlit frontend application
-- Structured clinical reporting workflow
-- Centralized reproducible configuration system
-- Organized artifact and output pipeline
+- Binary chest X-ray classification: NORMAL vs PNEUMONIA
+- Transfer learning with ResNet18 (ImageNet pretrained)
+- Medical image preprocessing and augmentation pipeline
+- Weighted cross-entropy loss for class imbalance handling
+- Modular, reproducible training pipeline with checkpoint saving
+- Grad-CAM heatmap generation for prediction explainability
+- FastAPI REST backend with Swagger documentation
+- Streamlit frontend with upload, heatmap, and report display
+- Structured template-based clinical report generation
+- Centralized configuration via `configs/config.py`
+- Full evaluation suite: accuracy, ROC-AUC, sensitivity, specificity, confusion matrix
 
 ---
 
-# Tech Stack
+## Tech Stack
 
 | Category | Technologies |
 |---|---|
-| Deep Learning | PyTorch, Torchvision |
-| Computer Vision | OpenCV, PIL |
+| Deep Learning | PyTorch 2.12, Torchvision 0.27 |
+| Computer Vision | OpenCV 4.13, Pillow |
+| Explainability | Grad-CAM 1.5.5 |
 | Backend API | FastAPI, Uvicorn |
 | Frontend | Streamlit |
-| Data Processing | NumPy, Pandas |
-| Explainability | Grad-CAM |
+| Data Processing | NumPy, Pandas, scikit-learn |
+| Visualization | Matplotlib, Seaborn |
+| Containerization | Docker |
 | Version Control | Git, GitHub |
 
 ---
 
-# System Architecture
+## System Architecture
 
 ```text
 Chest X-ray Image
         ↓
 Preprocessing Pipeline
+(resize 224×224, normalize to ImageNet stats, augmentation on train only)
         ↓
-CNN Classification Model
+ResNet18 Classification Model
+(frozen conv1–layer3, trainable layer4 + FC head)
         ↓
-Prediction + Confidence
+Prediction + Confidence Score
         ↓
-Grad-CAM Explainability
+Grad-CAM Heatmap
+(gradient-weighted class activation map via layer4)
         ↓
 Structured Clinical Report
+(template-based: findings, impression, recommendations)
         ↓
 FastAPI Inference API
         ↓
@@ -62,404 +62,316 @@ Streamlit Frontend
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```text
-ai-medical-imaging-system/
+medical-imaging-ai/
 │
 ├── api/
+│   └── main.py                  # FastAPI backend
 │
 ├── app/
+│   └── streamlit_app.py         # Streamlit frontend
 │
 ├── configs/
-│   └── config.py
+│   └── config.py                # Centralized hyperparameters and paths
 │
 ├── data/
-│   ├── raw/
-│   ├── processed/
 │   └── chest_xray/
+│       ├── train/
+│       │   ├── NORMAL/
+│       │   └── PNEUMONIA/
+│       ├── val/
+│       │   ├── NORMAL/
+│       │   └── PNEUMONIA/
+│       └── test/
+│           ├── NORMAL/
+│           └── PNEUMONIA/
 │
 ├── models/
-│   └── best_model.pth
+│   └── best_model.pth           # Saved best checkpoint
 │
 ├── notebooks/
 │
 ├── outputs/
-│   ├── metrics/
-│   ├── visualizations/
+│   ├── metrics/                 # JSON metric files
+│   ├── visualizations/          # Confusion matrix, ROC curve, Grad-CAM
 │   ├── predictions/
-│   └── logs/
+│   ├── logs/
+│   └── reports/                 # Pipeline summary reports
 │
 ├── scripts/
-│   ├── setup_dataset.py
+│   ├── setup_dataset.py         # Dataset download, verify, rebalance
 │   └── test_gradcam.py
 │
 ├── src/
 │   ├── preprocessing/
+│   │   └── transforms.py        # Train/val augmentation pipelines
 │   ├── training/
+│   │   ├── dataset.py           # DataLoader construction
+│   │   ├── model.py             # ResNet18 with transfer learning
+│   │   ├── train.py             # Training loop with weighted loss
+│   │   └── evaluate.py          # Full test set evaluation
 │   ├── inference/
 │   ├── explainability/
+│   │   └── gradcam.py           # Grad-CAM heatmap generation
 │   └── reporting/
+│       └── report_generator.py  # Structured clinical report
 │
-├── main.py
+├── main.py                      # Unified pipeline orchestrator
+├── Dockerfile
 ├── requirements.txt
-├── README.md
-└── .gitignore
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-# Dataset Setup
+## Dataset
 
-## Data Source
+**Source**: [Chest X-Ray Images (Pneumonia) — Kaggle](https://www.kaggle.com/datasets/paul-mooney/chest-xray-pneumonia)
+**License**: CC0 1.0 (Public Domain)
 
-This project uses the **Chest X-Ray Images (Pneumonia)** dataset from Kaggle:
-- **Source**: https://www.kaggle.com/datasets/paul-mooney/chest-xray-pneumonia
-- **License**: CC0 1.0 (Public Domain)
-- **Description**: Labeled chest X-ray images (NORMAL vs PNEUMONIA)
+### Rebalanced Split (80/10/10 stratified, seed=42)
 
-## Quick Setup (Automated)
-
-### Option 1: Using Kaggle API (Recommended if you have API key)
+The default Kaggle split has only 16 validation images, making validation metrics meaningless. A stratified rebalance script is included:
 
 ```bash
-# Install kaggle CLI
-pip install kaggle
-
-# Configure API credentials (download from https://www.kaggle.com/settings/account)
-# Place kaggle.json in ~/.kaggle/ (Linux/Mac) or C:\Users\<username>\.kaggle\ (Windows)
-
-# Run setup script with Kaggle API
-python scripts/setup_dataset.py --kaggle-api
+python scripts/setup_dataset.py --rebalance-split --seed 42
 ```
-
-### Option 2: Manual Setup
-
-```bash
-# Download from https://www.kaggle.com/datasets/paul-mooney/chest-xray-pneumonia
-# Extract the downloaded chest-xray-pneumonia.zip to the data/ directory:
-unzip chest-xray-pneumonia.zip -d data/
-
-# Verify dataset structure
-python scripts/setup_dataset.py --verify
-```
-
-## Expected Directory Structure
-
-```text
-data/
-└── chest_xray/
-    ├── train/
-    │   ├── NORMAL/
-    │   └── PNEUMONIA/
-    ├── val/
-    │   ├── NORMAL/
-    │   └── PNEUMONIA/
-    └── test/
-        ├── NORMAL/
-        └── PNEUMONIA/
-```
-
-## Dataset Statistics
-
-**Current Kaggle split (actual):**
 
 | Split | NORMAL | PNEUMONIA | Total |
 |-------|--------|-----------|-------|
-| Train | 1,341  | 3,875     | 5,216 |
-| Val   | 8      | 8         | 16    |
-| Test  | 234    | 390       | 624   |
+| Train | 1,266 | 3,418 | 4,684 |
+| Val | 158 | 427 | 585 |
+| Test | 159 | 428 | 587 |
 | **Total** | **1,583** | **4,273** | **5,856** |
 
-> **Important:** Validation has only 16 images, so validation accuracy is unstable (1 image = 6.25%).
+Class imbalance ratio: ~2.7:1 (PNEUMONIA:NORMAL). Handled via inverse-frequency weighted loss.
 
----
-
-# Reproducible Pipeline
-
-The project follows a modular and reproducible ML workflow:
-
-```text
-Raw Medical Images
-        ↓
-Preprocessing & Augmentation
-        ↓
-Dataset Loading
-        ↓
-CNN Training Pipeline
-        ↓
-Checkpoint Saving
-        ↓
-Inference Pipeline
-        ↓
-Explainability Generation
-        ↓
-API-Based Serving
-        ↓
-Frontend Visualization
-```
-
----
-
-# Quick Start: Complete Pipeline
-
-Run the entire workflow in one command:
+### Manual Setup
 
 ```bash
-# Full pipeline: dataset → train → evaluate → report
-python main.py
+# Download from Kaggle link above
+# Extract to data/ then verify:
+python scripts/setup_dataset.py --verify
 
-# Skip dataset setup (use existing data)
-python main.py --skip-dataset
-
-# Skip training (use existing model)
-python main.py --skip-train
-
-# Evaluate only (no training)
-python main.py --evaluate-only
+# Apply stratified rebalance (recommended):
+python scripts/setup_dataset.py --rebalance-split --seed 42
 ```
 
 ---
 
-# Model Training
+## Training Pipeline
 
-The system uses:
+### Configuration
 
-- ResNet18 transfer learning
-- Weighted cross-entropy loss
-- Learning rate scheduling
-- Validation monitoring
-- Best-checkpoint saving
-- Centralized hyperparameter configuration
+All hyperparameters are centralized in `configs/config.py`:
 
-Training outputs include:
+| Parameter | Value |
+|---|---|
+| Model | ResNet18 (ImageNet pretrained) |
+| Frozen layers | conv1, layer1, layer2, layer3 |
+| Trainable layers | layer4 + FC head |
+| Loss | CrossEntropyLoss with class weights |
+| Optimizer | Adam, lr=1e-3 |
+| Scheduler | StepLR (γ=0.5, step=5 epochs) |
+| Epochs | 10 |
+| Batch size | 32 |
+| Seed | 42 |
 
-- Model checkpoints
-- Training history metrics
-- Prediction artifacts
-- Explainability visualizations
+### Augmentation (train split only)
 
----
+| Transform | Rationale |
+|---|---|
+| RandomHorizontalFlip | Pathology appears on both sides |
+| RandomRotation(±10°) | Patient positioning variation |
+| ColorJitter(brightness, contrast) | Equipment exposure variation |
+| Normalize (ImageNet mean/std) | Required for pretrained weights |
 
-# Model Evaluation
-
-The project includes a comprehensive evaluation pipeline that assesses model performance on the test set.
-
-## Evaluation Metrics
-
-| Metric | Purpose |
-|--------|---------|
-| **Overall Accuracy** | Percentage of correct predictions |
-| **ROC-AUC** | Receiver Operating Characteristic - Area Under Curve |
-| **Precision** | True positives / (True positives + False positives) |
-| **Recall** | True positives / (True positives + False negatives) |
-| **F1-Score** | Harmonic mean of precision and recall |
-| **Sensitivity (TPR)** | True positive rate (catching pneumonia cases) |
-| **Specificity (TNR)** | True negative rate (correctly identifying normal cases) |
-| **Confusion Matrix** | Visual breakdown of predictions vs actual labels |
-| **ROC Curve** | Visual representation of model discrimination ability |
-
-## Run Evaluation
+### Run Training
 
 ```bash
-python src/training/evaluate.py
+python -m src.training.train
 ```
+
+Outputs saved to:
+- `models/best_model.pth` — best checkpoint by validation loss
+- `outputs/metrics/training_history.json` — per-epoch loss and accuracy
+
+---
+
+## Model Evaluation
+
+```bash
+python -m src.training.evaluate
+```
+
+### Results on Test Set (587 images)
+
+| Metric | Value |
+|---|---|
+| Accuracy | 95.74% |
+| ROC-AUC | **98.75%** |
+| Sensitivity (Recall) | 96.03% |
+| Specificity | 94.97% |
+| Macro F1 | 94.70% |
+| Weighted F1 | 95.78% |
+
+### Confusion Matrix
+
+| | Predicted NORMAL | Predicted PNEUMONIA |
+|---|---|---|
+| **Actual NORMAL** | 151 (TN) | 8 (FP) |
+| **Actual PNEUMONIA** | 17 (FN) | 411 (TP) |
+
+> **Why sensitivity matters most**: A false negative (missed pneumonia) sends a sick patient home untreated. A false positive leads to additional tests — costly but recoverable. The model is optimized to minimize false negatives.
 
 ### Output Artifacts
 
-| Artifact | Location | Description |
-|----------|----------|-------------|
-| Test metrics | `outputs/metrics/test_metrics.json` | Overall and per-class metrics |
-| Classification report | `outputs/metrics/classification_report.json` | Detailed sklearn report |
-| Confusion matrix plot | `outputs/visualizations/confusion_matrix.png` | Heatmap of predictions |
-| ROC curve plot | `outputs/visualizations/roc_curve.png` | Model discrimination curve |
-
----
-
-# Grad-CAM Explainability
-
-The project implements Grad-CAM explainability for medical interpretability.
-
-Grad-CAM visualizations help identify:
-
-- Lung regions influencing predictions
-- High-attention abnormal areas
-- Model reasoning patterns
-
----
-
-# FastAPI Backend
-
-The backend exposes REST API endpoints for:
-
-| Endpoint | Purpose |
+| Artifact | Path |
 |---|---|
-| `/` | API status |
-| `/health` | Health check |
-| `/predict` | Pneumonia prediction inference |
+| Test metrics | `outputs/metrics/test_metrics.json` |
+| Classification report | `outputs/metrics/classification_report.json` |
+| Confusion matrix | `outputs/visualizations/confusion_matrix.png` |
+| ROC curve | `outputs/visualizations/roc_curve.png` |
 
 ---
 
-# Streamlit Frontend
+## Grad-CAM Explainability
 
-The Streamlit application provides:
+Grad-CAM computes gradient-weighted class activation maps from the final convolutional layer (layer4), producing a heatmap that highlights which lung regions drove the prediction.
 
-- Chest X-ray upload interface
-- Real-time prediction display
-- Confidence visualization
-- Clinical reporting output
-- Interactive healthcare AI demo
+```bash
+python -m src.explainability.gradcam "path/to/xray.jpeg"
+```
+
+Output saved to `outputs/visualizations/gradcam_output.png`.
+
+Red/yellow regions = high attention. For a valid model, these must overlap with lung fields — not image borders or annotation text.
 
 ---
 
-# Run the Project
-
-## 1. Create Virtual Environment
-
-```bash
-python -m venv .venv
-```
-
-### Activate Environment (Windows)
-
-```bash
-.venv\Scripts\activate
-```
-
-### Activate Environment (Linux/Mac)
-
-```bash
-source .venv/bin/activate
-```
-
----
-
-## 2. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 3. Setup Dataset
-
-```bash
-python scripts/setup_dataset.py --verify
-# or
-python scripts/setup_dataset.py --kaggle-api
-```
-
----
-
-## 4. Run Complete Pipeline (Recommended)
-
-```bash
-python main.py
-```
-
----
-
-## 5. Train Model (Manual)
-
-```bash
-python src/training/train.py
-```
-
----
-
-## 6. Evaluate Model (Manual)
-
-```bash
-python src/training/evaluate.py
-```
-
----
-
-## 7. Run FastAPI Backend
+## API Usage
 
 ```bash
 uvicorn api.main:app --reload
 ```
 
 - API: `http://127.0.0.1:8000`
-- Docs: `http://127.0.0.1:8000/docs`
+- Swagger docs: `http://127.0.0.1:8000/docs`
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | GET | API status |
+| `/health` | GET | Health check + model load status |
+| `/predict` | POST | Upload X-ray → prediction + confidence + clinical report |
+| `/heatmap` | POST | Upload X-ray → Grad-CAM overlay image |
+
+### Example `/predict` Response
+
+```json
+{
+  "status": "success",
+  "filename": "xray.jpeg",
+  "predicted_class": "PNEUMONIA",
+  "confidence": 99.9,
+  "probabilities": {
+    "NORMAL": 0.1,
+    "PNEUMONIA": 99.9
+  },
+  "report": {
+    "findings": "Imaging findings are strongly consistent with pneumonia...",
+    "impression": "HIGH suspicion for pneumonia...",
+    "recommendations": ["Correlate with patient symptoms...", "..."]
+  }
+}
+```
 
 ---
 
-## 8. Run Streamlit Frontend
+## Streamlit Frontend
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-- Frontend: `http://localhost:8501`
+Available at `http://localhost:8501`
+
+Features:
+- X-ray image upload
+- Side-by-side: original image | Grad-CAM heatmap | prediction
+- Confidence score with tier (HIGH / MODERATE / LOW)
+- Structured clinical report with tabbed view
+- Downloadable plain-text report
 
 ---
 
-# Model Outputs
-
-| Artifact | Location |
-|---|---|
-| Trained model | `models/best_model.pth` |
-| Training history | `outputs/metrics/training_history.json` |
-| Test metrics | `outputs/metrics/test_metrics.json` |
-| Classification report | `outputs/metrics/classification_report.json` |
-| Grad-CAM outputs | `outputs/visualizations/` |
-| Prediction artifacts | `outputs/predictions/` |
-| Logs | `outputs/logs/` |
-
----
-
-# Current Engineering Highlights
-
-- End-to-end reproducible ML pipeline (dataset → train → evaluate)
-- Comprehensive evaluation metrics (confusion matrix, ROC-AUC, sensitivity/specificity)
-- Modular architecture with clear separation of concerns
-- Centralized configuration for reproducibility
-- Weighted loss handling for class imbalance
-- Explainable healthcare AI with Grad-CAM
-- Frontend-backend separation (Streamlit + FastAPI)
-- Structured output artifacts (metrics, visualizations, logs)
-
----
-
-# Dependencies & Reproducibility
-
-## Environment Setup
+## Docker
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+# Build
+docker build -t pneumonia-classifier .
+
+# Run FastAPI backend
+docker run -p 8000:8000 pneumonia-classifier
+
+# Run Streamlit frontend
+docker run -p 8501:8501 pneumonia-classifier \
+  streamlit run app/streamlit_app.py --server.address 0.0.0.0
 ```
 
-## Reproducibility Features
+---
 
-- Pinned versions in `requirements.txt`
-- Fixed random seed (`SEED=42`) across PyTorch/NumPy/Python
-- Automated dataset setup and verification script
-- Centralized config in `configs/config.py`
-- Formal evaluation pipeline with test artifacts
+## Complete Pipeline (One Command)
+
+```bash
+# Full pipeline: verify dataset → train → evaluate → report
+python main.py
+
+# Skip dataset verification
+python main.py --skip-dataset
+
+# Skip training, use existing model
+python main.py --skip-train
+
+# Evaluate only
+python main.py --evaluate-only
+```
 
 ---
 
-# Future Improvements
+## Screenshots
 
-- Validation split cleanup (current val=16 issue)
-- DICOM image support
-- Docker container deployment
-- Multi-class thoracic disease detection
-- Model calibration improvements
-- Cloud deployment workflows
-- Advanced clinical reporting generation
-- Cross-dataset evaluation and generalization
+*Add screenshots here after running the Streamlit app*
 
 ---
 
-# Disclaimer
+## Reproducibility
+
+| Feature | Implementation |
+|---|---|
+| Fixed seed | SEED=42 across PyTorch, NumPy, Python |
+| Pinned dependencies | `requirements.txt` with exact versions |
+| Centralized config | `configs/config.py` for all hyperparameters |
+| Stratified split | 80/10/10 with seed, class ratio preserved |
+| Checkpoint saving | Best model by validation loss |
+
+---
+
+## Future Improvements
+
+- DICOM image format support
+- Multi-class thoracic disease detection (beyond binary)
+- Model calibration (Platt scaling / temperature scaling)
+- LLM-powered clinical report generation
+- Cloud deployment (AWS / GCP)
+- Cross-dataset generalization testing
+
+---
+
+## Disclaimer
 
 This project is developed for educational and research purposes only.
-
-Predictions are not intended for clinical diagnosis or medical decision-making.
-```
+Model predictions are not intended for clinical diagnosis or medical decision-making.
+All outputs must be reviewed by a qualified radiologist before any clinical use.
