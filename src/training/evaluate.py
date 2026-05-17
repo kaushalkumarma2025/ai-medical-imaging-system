@@ -410,11 +410,15 @@ def evaluate_model(model_path=MODEL_PATH):
     print("\n✓ Evaluation complete!")
     
     return {
-        "metrics": metrics,
-        "test_loss": test_loss,
-        "test_accuracy": test_accuracy
+    "test_accuracy": test_accuracy,
+    "test_loss":     test_loss,
+    "metrics": {
+        "roc_auc":   metrics["overall"]["roc_auc"],
+        "f1_macro":  metrics["overall"]["macro_f1"],
+        "recall":    metrics["clinical_metrics"]["sensitivity"],
+        "precision": metrics["overall"]["macro_precision"],
     }
-
+}
 # ======================================
 # ENTRY POINT
 # ======================================

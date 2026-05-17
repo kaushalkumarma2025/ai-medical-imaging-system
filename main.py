@@ -25,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 
 from configs.config import OUTPUT_DIR, MODEL_PATH
-from scripts.setup_dataset import verify_only, print_dataset_stats, save_dataset_metadata
+from scripts.setup_dataset import verify_dataset_structure, print_dataset_stats, save_dataset_metadata
 from src.training.train import train
 from src.training.evaluate import evaluate_model
 
@@ -59,7 +59,7 @@ def step_1_setup_dataset():
     
     if os.path.exists(data_dir):
         print(f"✓ Dataset directory exists at {data_dir}")
-        if verify_only(data_dir):
+        if verify_dataset_structure(data_dir):
             print("✓ Dataset verification passed!")
             stats = {}
             for split in ['train', 'val', 'test']:
@@ -69,7 +69,7 @@ def step_1_setup_dataset():
                     images = len([f for f in os.listdir(class_path) 
                                 if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
                     stats[f"{split}/{class_name}"] = images
-            save_dataset_metadata(data_dir, stats)
+            save_dataset_metadata(data_dir, stats, rebalanced=False, seed=42)
             return True
         else:
             print("✗ Dataset verification failed!")
